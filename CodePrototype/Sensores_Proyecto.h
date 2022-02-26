@@ -48,7 +48,8 @@ class Sensor{
             DHT_22,
             MQ_135,
             MQ_2,
-            BH_1735
+            BH_1735,
+            KY_001
         };
 
         enum Type_DHT{

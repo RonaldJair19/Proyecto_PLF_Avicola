@@ -4,6 +4,8 @@
 #include <DHT_U.h>
 #include <Wire.h>
 #include <BH1750.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 /*METODOS DE LA CLASE NodoSensor*/
 //void NodeSensor::addValue(float Value){  
@@ -33,11 +35,11 @@ int NodeSensor::addValue(float Value){
         return 0;
     }
     else{
-        if(_Counter_Sensor == 1){
+        if(_Counter_Sensor == 0){
             _MaxValue = Value;
             _MinValue = Value;
         }
-        else{
+        if(_Counter_Sensor >= 1){
             if (_MaxValue < Value){
                 _MaxValue = Value;
             }
@@ -109,7 +111,7 @@ void NodeSensor::resetCounterAvg(){
     _Counter_Sensor = 0 ;
     //_Avarage_Value = 0;
     _Values  = 0;
-    //_MaxValue, _MinValue = 0; //Si no se resetea se puede tener la lectura maxima y minima de todas las lecturas
+    _MaxValue, _MinValue = 0; //Si no se resetea se puede tener la lectura maxima y minima de todas las lecturas
 }
 
 
@@ -164,6 +166,13 @@ void Sensor::readValueSensor(){
         dht22.begin();
         _Values_Temp = dht22.readTemperature();
         _Values_Hum = dht22.readHumidity();
+    }
+    else if(_Type == Type_Sensor::KY_001){
+        OneWire oneWire(_Pin);
+        DallasTemperature sensors(&oneWire);
+        sensors.begin();
+        sensors.requestTemperatures();
+        _Value_Sensor = sensors.getTempCByIndex(0);
     }
     else if (_Type == Type_Sensor::UNCONFIGURED_SENSOR){
         _Values_Temp = 0;
