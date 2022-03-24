@@ -5,11 +5,12 @@
 
 //DEFINICION PINES SENSORES Y ACTUADORES
 #define DHT22_PIN 4
+#define DHT22_2_PIN 6
+#define DHT22_3_PIN 8
 #define DHT11_PIN 2
 #define MQ2_1_PIN A2
 #define MQ135_1_PIN A7
 #define MQ135_2_PIN A1
-#define KY_001_PIN 6
 
 // DEFINICION DE LOS OBJETOS NODO PARA CADA VARIABLE A MONITORIZAR
 NodeSensor NODO_TEMPERATURE(NodeSensor::VARIABLE_TEMPERATURE);
@@ -52,10 +53,11 @@ Ticker RUTINA_LUZ(Rutina_Iluminacion, 10000); //En micros segundos
 //DEFINICION DE LOS PINES Y TIPO DE SENSOR
 
 //----------Para sensores KY001----------
-Sensor Sensor_KY_001(KY_001_PIN, Sensor::KY_001);
 
 //----------Para sensores DHT22----------
 Sensor Sensor_DHT22_1(DHT22_PIN, Sensor::DHT_22);
+Sensor Sensor_DHT22_2(DHT22_2_PIN, Sensor::DHT_22);
+Sensor Sensor_DHT22_3(DHT22_3_PIN, Sensor::DHT_22);
 
 //----------Para sensores DHT11----------
 Sensor Sensor_DHT11_1(DHT11_PIN,Sensor::DHT_11);
@@ -115,13 +117,19 @@ void Rutina_Temperatura(){
       Serial.println(F("- Error de lectura de temperatura en el sensor DHT11_1"));
   }
 
-  Sensor_KY_001.readValueSensor();
-  Serial.print(F("Valor sensor KY 001: "));
-  Serial.println(Sensor_KY_001.getValueSensor());
-  if(!NODO_TEMPERATURE.addValue(Sensor_KY_001.getValueSensor())){
-      Serial.println(F("- Error de lectura de temperatura en el sensor KY 001"));
+  Sensor_DHT22_2.readValueSensor();
+  Serial.print(F("Valor sensor DHT22_2: "));
+  Serial.println(Sensor_DHT22_2.getValueSensor(Sensor::DHT_22_TEMPERATURE));
+  if(!NODO_TEMPERATURE.addValue(Sensor_DHT22_2.getValueSensor(Sensor::DHT_22_TEMPERATURE))){
+      Serial.println(F("- Error de lectura de temperatura en el sensor DHT22_2"));
   }
 
+  Sensor_DHT22_3.readValueSensor();
+  Serial.print(F("Valor sensor DHT22_3: "));
+  Serial.println(Sensor_DHT22_3.getValueSensor(Sensor::DHT_22_TEMPERATURE));
+  if(!NODO_TEMPERATURE.addValue(Sensor_DHT22_3.getValueSensor(Sensor::DHT_22_TEMPERATURE))){
+      Serial.println(F("- Error de lectura de temperatura en el sensor DHT22_3"));
+  }
 
 
   Serial.print(F("+ Promedio de temperatura: " ));
@@ -152,6 +160,20 @@ void Rutina_Humedad(){
   Serial.println(Sensor_DHT11_1.getValueSensor(Sensor::DHT_11_HUMIDITY));
   if(!NODO_HUMIDITY.addValue(Sensor_DHT11_1.getValueSensor(Sensor::DHT_11_HUMIDITY))){
     Serial.println(F("- Error en la lectura de la humedad en el sensor DHT11_1"));
+  }
+
+  Sensor_DHT22_2.readValueSensor();
+  Serial.print(F("Valor sensor DHT22_2: "));
+  Serial.println(Sensor_DHT22_2.getValueSensor(Sensor::DHT_22_HUMIDITY));
+  if(!NODO_HUMIDITY.addValue(Sensor_DHT22_2.getValueSensor(Sensor::DHT_22_HUMIDITY))){
+    Serial.println(F("- Error en la lectura de la humedad en el sensor DHT22_2"));
+  }
+
+  Sensor_DHT22_3.readValueSensor();
+  Serial.print(F("Valor sensor DHT22_3: "));
+  Serial.println(Sensor_DHT22_3.getValueSensor(Sensor::DHT_22_HUMIDITY));
+  if(!NODO_HUMIDITY.addValue(Sensor_DHT22_3.getValueSensor(Sensor::DHT_22_HUMIDITY))){
+    Serial.println(F("- Error en la lectura de la humedad en el sensor DHT22_3"));
   }
 
   Serial.print(F("+ Promedio de humedad: "));
