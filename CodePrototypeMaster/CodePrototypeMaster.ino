@@ -2,6 +2,7 @@
 #include "Arduino.h"
 #include "heltec.h"
 #include <TickTwo.h>
+#include "TTN_CayenneLPP.h"
 
 #if defined( Wireless_Stick_Lite )
   #include <Wire.h>
