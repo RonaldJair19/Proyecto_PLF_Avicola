@@ -2,7 +2,7 @@
 #include "Arduino.h"
 #include "heltec.h"
 #include <TickTwo.h>
-#include "TTN_CayenneLPP.h"
+// #include "TTN_CayenneLPP.h"
 
 #if defined( Wireless_Stick_Lite )
   #include <Wire.h>
@@ -15,7 +15,7 @@
 
 void receivePayload();
 
-TickTwo routineReceivePayload(receivePayload, 12000);
+TickTwo routineReceivePayload(receivePayload, 45000);
 
 uint8_t BYTE_CONTROL_BEGIN = 1;
 uint8_t BYTE_CONTROL_END = 9;
