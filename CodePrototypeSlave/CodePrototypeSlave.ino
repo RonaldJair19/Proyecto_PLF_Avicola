@@ -8,6 +8,9 @@ TTN_CayenneLPP lpp;
 
 bool S = false;
 char payloadString[50] = {0};
+char payloadStringReceived[50] = {0};
+uint8_t* bufferReceived;
+int i = 0;
 
 //DEFINICION PINES SENSORES Y ACTUADORES
 #define DHT22_PIN 4
@@ -44,20 +47,20 @@ void Rutina_Humedad();
 void Rutina_Gases_Inflamables();
 void Rutina_Gases_Toxicos();
 void Rutina_Iluminacion();
-void SendPayload_I2C();
+void AddAveragesLPP();
 void eventoSolicitud();
 void eventoRecepcion();
 // void Elementos_Control();
 
 //DEFINICION DE LOS TICKERS QUE EJECUTARAN LA LECTURA DE LOS SENSORES EN UN TIEMPO DETERMINADO
-Ticker RUTINA_TEMP(Rutina_Temperatura, 17000); //En micros segundos
-Ticker RUTINA_HUM(Rutina_Humedad, 21000); //En micros segundos
+Ticker RUTINA_TEMP(Rutina_Temperatura, 15000); //En micros segundos
+Ticker RUTINA_HUM(Rutina_Humedad, 9000); //En micros segundos
 Ticker RUTINA_MQ135(Rutina_Gases_Toxicos, 10000); //En micros segundos
 Ticker RUTINA_MQ2(Rutina_Gases_Inflamables, 6000); //En micros segundos
 Ticker RUTINA_LUZ(Rutina_Iluminacion, 10000); //En micros segundos
 
 //TickTwo para el envio de la informacion
-// Ticker RUTINA_ENVIO_I2C(SendPayload_I2C, 25000);
+// Ticker RUTINE_AVERAGES(AddAveragesLPP, 21000);
 
 //DEFINICION DE TICKER PARA LOS ACTUADORES
 // Ticker RUTINA_RELAY_1(Elementos_Control, 30000);
@@ -104,7 +107,7 @@ void setup() {
   RUTINA_MQ135.start();
   RUTINA_MQ2.start();
   RUTINA_LUZ.start();
-  // RUTINA_ENVIO_I2C.start();
+  // RUTINE_AVERAGES.start();
   // RUTINA_RELAY_1.start();
 }
 
@@ -114,6 +117,7 @@ void loop() {
   RUTINA_MQ135.update();
   RUTINA_MQ2.update();
   RUTINA_LUZ.update();
+  // RUTINE_AVERAGES.update();
   // RUTINA_ENVIO_I2C.update();
   // if(RUTINA_ENVIO_I2C.counter() == 4){
   //   //Serial.println(F("Cambio del intervalo"));
@@ -175,7 +179,7 @@ void Rutina_Iluminacion(){
   NODO_LIGHT.addValue(SensorBH1750_1.getValueSensor());
 }
 
-void SendPayload_I2C(){
+void AddAveragesLPP(){
   NODO_TEMPERATURE.CalculateAvarageValue();
   NODO_TEMPERATURE.resetCounterAvg();
   lpp.addTemperature(1, NODO_TEMPERATURE.getAvarage());
@@ -221,13 +225,22 @@ void eventoRecepcion(){
   case 'S':
       S = true;
       //Es mejor hacer una rutina para SendPayload() para evitar desborde de memoria
-      SendPayload_I2C();
+      AddAveragesLPP();
     break;
   case 'R':
       Serial.println(F("Recibido!"));
-      // while(Wire.available()){
-        
-      // }
+      while(Wire.available()){
+        byte byteReceived = Wire.read();
+        // bufferReceived[i] = byteReceived;
+        Serial.println("Byte["+String(i)+"]: "+ String(byteReceived));
+        i++;
+      }
+      // Serial.println();
+      // sprintf(payloadStringReceived,"%02X %02X %02X %02X\n",bufferReceived[0],bufferReceived[1],bufferReceived[2],bufferReceived[3]);
+      // Serial.print(payloadStringReceived);
+      // Serial.println();
+      // free(bufferReceived);
+      i=0;
     break;
 
   default:

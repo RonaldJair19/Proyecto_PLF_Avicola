@@ -14,12 +14,17 @@
 #endif
 
 void receivePayload();
+void message(const uint8_t* payload, size_t size, int rssi);
 
-TickTwo routineReceivePayload(receivePayload, 45000);
+TickTwo routineReceivePayload(receivePayload, 25000);
 
 uint8_t BYTE_CONTROL_BEGIN = 1;
 uint8_t BYTE_CONTROL_END = 9;
 uint8_t* buffer;
+//Arreglo de Bytes de prueba
+const byte data[] = {1, 2, 3, 4};
+const size_t dataLength = sizeof(data);
+
 int i = 0;
 char payloadString[50] = {0};
 byte byteReceivedEnd, byteReceivedInit;
@@ -77,9 +82,12 @@ void receivePayload(){
       // }
       sprintf(payloadString,"%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",byteReceivedInit,buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],buffer[8], byteReceivedEnd);
       Serial.println(F(payloadString));
+      /* ======================= */ 
       Wire.beginTransmission(23);
       Wire.write('R');
+      Wire.write(data,dataLength);
       Wire.endTransmission();
+      /* ======================= */ 
     }
     else{
       Serial.println("Mensaje corrupto en su Byte final: " + String(byteReceivedEnd));
@@ -92,3 +100,19 @@ void receivePayload(){
   }
   // }
 }
+
+
+// void message(const uint8_t* payload, size_t size, int rssi){
+//   Serial.println(F("Mensaje recibido: "));
+//   Serial.print("Recibido " + String(size) + " bytes RSSI= " + String(rssi) + "dB");
+//   for (int i = 0; i < size; i++)
+//   {
+//     Serial.print(" " + String(payload[i])+" ");
+//     // Serial.write(payload[i]);
+//   }
+//   Wire.beginTransmission(23);
+//   Wire.write('R');
+//   Wire.write(payload,size);
+//   Wire.endTransmission();
+//   Serial.println();
+// }
