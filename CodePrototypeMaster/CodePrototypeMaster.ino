@@ -22,7 +22,7 @@ uint8_t BYTE_CONTROL_BEGIN = 1;
 uint8_t BYTE_CONTROL_END = 9;
 uint8_t* buffer;
 //Arreglo de Bytes de prueba
-const byte data[] = {1, 2, 3, 4};
+const byte data[] = {1, 2, 3, 4, 5};
 const size_t dataLength = sizeof(data);
 
 int i = 0;
@@ -54,7 +54,8 @@ void receivePayload(){
   
   // if (sizeBuffer == 9){
   buffer = (uint8_t*)malloc(sizeBuffer);
-  Serial.println("Cantidad del Buffer a recibir: "+ String(sizeBuffer)+"\n");
+  Serial.println(F("===================================================="));
+  Serial.println("Cantidad del Buffer a recibir: "+ String(sizeBuffer));
   Wire.requestFrom(23, (int)sizeBuffer); 
 
   byteReceivedInit = Wire.read();
@@ -82,9 +83,11 @@ void receivePayload(){
       // }
       sprintf(payloadString,"%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",byteReceivedInit,buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],buffer[8], byteReceivedEnd);
       Serial.println(F(payloadString));
+      Serial.println(F("===================================================="));
       /* ======================= */ 
       Wire.beginTransmission(23);
       Wire.write('R');
+      Wire.write(dataLength);
       Wire.write(data,dataLength);
       Wire.endTransmission();
       /* ======================= */ 

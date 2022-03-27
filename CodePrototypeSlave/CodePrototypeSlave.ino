@@ -9,6 +9,7 @@ TTN_CayenneLPP lpp;
 bool S = false;
 char payloadString[50] = {0};
 char payloadStringReceived[50] = {0};
+// byte bufferReceived[4];
 uint8_t* bufferReceived;
 int i = 0;
 
@@ -229,17 +230,20 @@ void eventoRecepcion(){
     break;
   case 'R':
       Serial.println(F("Recibido!"));
+      byte sizeBuffer = Wire.read();
+      Serial.println("Cantidad de Bytes a recibir:"+String(sizeBuffer));
+      bufferReceived = (uint8_t*)malloc(sizeBuffer);
       while(Wire.available()){
         byte byteReceived = Wire.read();
-        // bufferReceived[i] = byteReceived;
         Serial.println("Byte["+String(i)+"]: "+ String(byteReceived));
+        bufferReceived[i] = byteReceived;
         i++;
       }
       // Serial.println();
-      // sprintf(payloadStringReceived,"%02X %02X %02X %02X\n",bufferReceived[0],bufferReceived[1],bufferReceived[2],bufferReceived[3]);
-      // Serial.print(payloadStringReceived);
+      sprintf(payloadStringReceived,"%02X %02X %02X %02X\n",bufferReceived[0],bufferReceived[1],bufferReceived[2],bufferReceived[3]);
+      Serial.println(payloadStringReceived);
       // Serial.println();
-      // free(bufferReceived);
+      free(bufferReceived); //Da Error, puede ser un problema en la asignacion de memoria dinamica o en la liberacion
       i=0;
     break;
 
