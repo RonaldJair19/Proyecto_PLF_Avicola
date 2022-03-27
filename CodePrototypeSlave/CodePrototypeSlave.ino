@@ -95,7 +95,7 @@ Sensor SensorBH1750_1(Sensor::BH_1735); // SCL ---> A5 | SDA ---> A4
 
 void setup() {
   Serial.begin(9600);
-  Serial.println(F("Iniciando..."));
+  // Serial.println(F("Iniciando..."));
   Wire.begin(23);                // unirse al bus i2c con la direccion #23
   Wire.onRequest(eventoSolicitud); // registrar evento de solicitud de datos
   Wire.onReceive(eventoRecepcion); // registrar evento de recepcion de datos
@@ -220,10 +220,14 @@ void eventoRecepcion(){
   {
   case 'S':
       S = true;
+      //Es mejor hacer una rutina para SendPayload() para evitar desborde de memoria
       SendPayload_I2C();
-      
     break;
-  case 1:
+  case 'R':
+      Serial.println(F("Recibido!"));
+      // while(Wire.available()){
+        
+      // }
     break;
 
   default:
@@ -243,8 +247,8 @@ void eventoSolicitud() {
     Wire.write(1);
     Wire.write(lpp.getBuffer(),lpp.getSize());
     Wire.write(9);
-    // sprintf(payloadString,"%02X %02X %02X %02X %02X %02X %02X %02X %02X\n",lpp.getBuffer()[0],lpp.getBuffer()[1],lpp.getBuffer()[2],lpp.getBuffer()[3],lpp.getBuffer()[4],lpp.getBuffer()[5],lpp.getBuffer()[6],lpp.getBuffer()[7],lpp.getBuffer()[8]);
-    // Serial.println(payloadString);
+    sprintf(payloadString,"%02X %02X %02X %02X %02X %02X %02X %02X %02X\n",lpp.getBuffer()[0],lpp.getBuffer()[1],lpp.getBuffer()[2],lpp.getBuffer()[3],lpp.getBuffer()[4],lpp.getBuffer()[5],lpp.getBuffer()[6],lpp.getBuffer()[7],lpp.getBuffer()[8]);
+    Serial.println(payloadString);
     // Serial.println(lpp.getBuffer()[1]);
     lpp.reset();
   }

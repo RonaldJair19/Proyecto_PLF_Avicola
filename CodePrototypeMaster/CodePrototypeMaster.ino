@@ -77,9 +77,8 @@ void receivePayload(){
       // }
       sprintf(payloadString,"%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",byteReceivedInit,buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],buffer[8], byteReceivedEnd);
       Serial.println(F(payloadString));
-      // i = 0;
       Wire.beginTransmission(23);
-      Wire.write(1);
+      Wire.write('R');
       Wire.endTransmission();
     }
     else{
