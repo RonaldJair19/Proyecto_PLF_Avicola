@@ -76,12 +76,11 @@ void receivePayload(){
       i++;
     }
     if(byteReceivedEnd == BYTE_CONTROL_END){
-      Serial.println();
-      Serial.println(F("Imprimiendo buffer verificado: "));
+      Serial.print(F("Imprimiendo buffer verificado: "));
       // for(int j=0;j<i;j++){
       //   Serial.print(buffer[j], HEX);
       // }
-      sprintf(payloadString,"%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",byteReceivedInit,buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],buffer[8], byteReceivedEnd);
+      sprintf(payloadString,"%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X",byteReceivedInit,buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],buffer[8], byteReceivedEnd);
       Serial.println(F(payloadString));
       Serial.println(F("===================================================="));
       /* ======================= */ 

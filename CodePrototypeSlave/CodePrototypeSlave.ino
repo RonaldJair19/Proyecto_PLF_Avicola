@@ -229,9 +229,9 @@ void eventoRecepcion(){
       AddAveragesLPP();
     break;
   case 'R':
-      Serial.println(F("Recibido!"));
+      Serial.println(F("Recibiendo mensaje del Maestro: "));
       byte sizeBuffer = Wire.read();
-      Serial.println("Cantidad de Bytes a recibir:"+String(sizeBuffer));
+      Serial.println("Cantidad de Bytes a recibir: "+String(sizeBuffer));
       bufferReceived = (uint8_t*)malloc(sizeBuffer);
       while(Wire.available()){
         byte byteReceived = Wire.read();
@@ -240,10 +240,11 @@ void eventoRecepcion(){
         i++;
       }
       // Serial.println();
+      Serial.print(F("Payload recibido:"));
       sprintf(payloadStringReceived,"%02X %02X %02X %02X\n",bufferReceived[0],bufferReceived[1],bufferReceived[2],bufferReceived[3]);
       Serial.println(payloadStringReceived);
       // Serial.println();
-      free(bufferReceived); //Da Error, puede ser un problema en la asignacion de memoria dinamica o en la liberacion
+      free(bufferReceived);
       i=0;
     break;
 
