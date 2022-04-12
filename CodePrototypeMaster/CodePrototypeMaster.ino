@@ -1,8 +1,21 @@
-//#include <Wire.h>
+#include <Wire.h>
 #include "Arduino.h"
 #include "heltec.h"
 #include <TickTwo.h>
-// #include "TTN_CayenneLPP.h"
+#include <TTN_esp32.h>
+
+/*  OTAA Activation   */
+// const char* devEui = "70B3D57ED004F03A"; // Change to TTN Device EUI
+// const char* appEui = "9876543211234567"; // Change to TTN Application EUI
+// const char* appKey = "7C81D4E0379682EDFECFEB98F1E3186A"; // Chaneg to TTN Application Key
+
+
+/* ABP ACTIVATION*/
+const char* devAddr = ""; // Change to TTN Device Address
+const char* nwkSKey = ""; // Change to TTN Network Session Key
+const char* appSKey = ""; // Change to TTN Application Session Key
+
+TTN_esp32 ttn ;
 
 #if defined( Wireless_Stick_Lite )
   #include <Wire.h>
@@ -16,7 +29,7 @@
 void receivePayload();
 void message(const uint8_t* payload, size_t size, int rssi);
 
-TickTwo routineReceivePayload(receivePayload, 25000);
+TickTwo routineReceivePayload(receivePayload, 30000*2);
 
 uint8_t BYTE_CONTROL_BEGIN = 1;
 uint8_t BYTE_CONTROL_END = 9;
@@ -30,18 +43,33 @@ char payloadString[50] = {0};
 byte byteReceivedEnd, byteReceivedInit;
 
 void setup() {
-  Heltec.begin(false /*Display Enable*/, false /*LoRa Disable*/, true /*Serial Enable*/);
-  // Wire1.begin(SDA_OLED, SCL_OLED);
+  Heltec.begin(false /*Display Enable*/, true /*LoRa Disable*/, true /*Serial Enable*/);
+  ttn.begin();
+  ttn.onMessage(message); // declare callback function when is downlink from server
+  /* =========ABP Activation==========*/
+  ttn.personalize(devAddr, nwkSKey, appSKey);
+  /* =========OTAA Activation==========*/
+  // ttn.join(devEui, appEui, appKey);
+  // Serial.print("Joining TTN ");
+  // while (!ttn.isJoined())
+  // {
+  //     Serial.print(".");
+  //     delay(500);
+  // }
+  // Serial.println("\njoined !");
+  /* ===================*/
+  ttn.showStatus();
   Wire.begin(SDA,SCL);
   Wire.setClock(100000);
-  //Serial.begin(115200);
   Serial.println(F("Iniciando..."));
   routineReceivePayload.start();
-  // Serial.begin(9600);  // configurar monitor serie a 9600
 }
 
 void loop() {
   routineReceivePayload.update();
+  if(routineReceivePayload.counter() == 5){
+    routineReceivePayload.interval(60000*5);
+  }
 }
 
 
@@ -49,10 +77,10 @@ void receivePayload(){
   Wire.beginTransmission(23);
   Wire.write('S');
   Wire.endTransmission();
+
   Wire.requestFrom(23, 1);
-  byte sizeBuffer = Wire.read();
   
-  // if (sizeBuffer == 9){
+  byte sizeBuffer = Wire.read();
   buffer = (uint8_t*)malloc(sizeBuffer);
   Serial.println(F("===================================================="));
   Serial.println("Cantidad del Buffer a recibir: "+ String(sizeBuffer));
@@ -83,6 +111,11 @@ void receivePayload(){
       sprintf(payloadString,"%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X",byteReceivedInit,buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],buffer[8], byteReceivedEnd);
       Serial.println(F(payloadString));
       Serial.println(F("===================================================="));
+      /* ===========Envio a TTN============ */ 
+      if (ttn.sendBytes(buffer, (sizeBuffer-2))){
+        Serial.println("Size buffer sending: " + String(sizeBuffer-2));
+        Serial.printf(" Payload enviado a TTN: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],buffer[8]);
+      }
       /* ======================= */ 
       Wire.beginTransmission(23);
       Wire.write('R');
@@ -104,17 +137,17 @@ void receivePayload(){
 }
 
 
-// void message(const uint8_t* payload, size_t size, int rssi){
-//   Serial.println(F("Mensaje recibido: "));
-//   Serial.print("Recibido " + String(size) + " bytes RSSI= " + String(rssi) + "dB");
-//   for (int i = 0; i < size; i++)
-//   {
-//     Serial.print(" " + String(payload[i])+" ");
-//     // Serial.write(payload[i]);
-//   }
-//   Wire.beginTransmission(23);
-//   Wire.write('R');
-//   Wire.write(payload,size);
-//   Wire.endTransmission();
-//   Serial.println();
-// }
+void message(const uint8_t* payload, size_t size, int rssi){
+  Serial.println(F("Mensaje recibido: "));
+  Serial.print("Recibido " + String(size) + " bytes RSSI= " + String(rssi) + "dB");
+  for (int i = 0; i < size; i++)
+  {
+    Serial.print(" " + String(payload[i])+" ");
+    // Serial.write(payload[i]);
+  }
+  // Wire.beginTransmission(23);
+  // Wire.write('R');
+  // Wire.write(payload,size);
+  // Wire.endTransmission();
+  Serial.println();
+}

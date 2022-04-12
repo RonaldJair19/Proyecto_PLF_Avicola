@@ -11,7 +11,7 @@ char payloadString[50] = {0};
 char payloadStringReceived[50] = {0};
 // byte bufferReceived[4];
 uint8_t* bufferReceived;
-int i = 0;
+uint8_t i = 0;
 
 //DEFINICION PINES SENSORES Y ACTUADORES
 #define DHT22_PIN 4
@@ -54,11 +54,11 @@ void eventoRecepcion();
 // void Elementos_Control();
 
 //DEFINICION DE LOS TICKERS QUE EJECUTARAN LA LECTURA DE LOS SENSORES EN UN TIEMPO DETERMINADO
-Ticker RUTINA_TEMP(Rutina_Temperatura, 15000); //En micros segundos
-Ticker RUTINA_HUM(Rutina_Humedad, 9000); //En micros segundos
-Ticker RUTINA_MQ135(Rutina_Gases_Toxicos, 10000); //En micros segundos
-Ticker RUTINA_MQ2(Rutina_Gases_Inflamables, 6000); //En micros segundos
-Ticker RUTINA_LUZ(Rutina_Iluminacion, 10000); //En micros segundos
+Ticker RUTINA_TEMP(Rutina_Temperatura, 15000); //En milisegundos
+Ticker RUTINA_HUM(Rutina_Humedad, 9000); //En milisegundos
+Ticker RUTINA_MQ135(Rutina_Gases_Toxicos, 10000); //En milisegundos
+Ticker RUTINA_MQ2(Rutina_Gases_Inflamables, 6000); //En milisegundos
+Ticker RUTINA_LUZ(Rutina_Iluminacion, 10000); //En milisegundos
 
 //TickTwo para el envio de la informacion
 // Ticker RUTINE_AVERAGES(AddAveragesLPP, 21000);
@@ -230,9 +230,9 @@ void eventoRecepcion(){
     break;
   case 'R':
       Serial.println(F("Recibiendo mensaje del Maestro: "));
-      byte sizeBuffer = Wire.read();
-      Serial.println("Cantidad de Bytes a recibir: "+String(sizeBuffer));
-      bufferReceived = (uint8_t*)malloc(sizeBuffer);
+      byte sizeBufferReceived = Wire.read();
+      Serial.println("Cantidad de Bytes a recibir: "+String(sizeBufferReceived));
+      bufferReceived = (uint8_t*)malloc(sizeBufferReceived);
       while(Wire.available()){
         byte byteReceived = Wire.read();
         Serial.println("Byte["+String(i)+"]: "+ String(byteReceived));
@@ -241,9 +241,9 @@ void eventoRecepcion(){
       }
       // Serial.println();
       Serial.print(F("Payload recibido:"));
-      sprintf(payloadStringReceived,"%02X %02X %02X %02X\n",bufferReceived[0],bufferReceived[1],bufferReceived[2],bufferReceived[3]);
+      sprintf(payloadStringReceived,"%02X %02X %02X %02X %02X",bufferReceived[0],bufferReceived[1],bufferReceived[2],bufferReceived[3],bufferReceived[4]);
       Serial.println(payloadStringReceived);
-      // Serial.println();
+      Serial.println(F("============================================================="));
       free(bufferReceived);
       i=0;
     break;
@@ -265,7 +265,7 @@ void eventoSolicitud() {
     Wire.write(1);
     Wire.write(lpp.getBuffer(),lpp.getSize());
     Wire.write(9);
-    sprintf(payloadString,"%02X %02X %02X %02X %02X %02X %02X %02X %02X\n",lpp.getBuffer()[0],lpp.getBuffer()[1],lpp.getBuffer()[2],lpp.getBuffer()[3],lpp.getBuffer()[4],lpp.getBuffer()[5],lpp.getBuffer()[6],lpp.getBuffer()[7],lpp.getBuffer()[8]);
+    sprintf(payloadString,"%02X %02X %02X %02X %02X %02X %02X %02X %02X",lpp.getBuffer()[0],lpp.getBuffer()[1],lpp.getBuffer()[2],lpp.getBuffer()[3],lpp.getBuffer()[4],lpp.getBuffer()[5],lpp.getBuffer()[6],lpp.getBuffer()[7],lpp.getBuffer()[8]);
     Serial.println(payloadString);
     // Serial.println(lpp.getBuffer()[1]);
     lpp.reset();
