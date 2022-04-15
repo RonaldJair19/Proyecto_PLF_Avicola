@@ -47,14 +47,14 @@ void SendPayload_I2C();
 // void Elementos_Control();
 
 //DEFINICION DE LOS TICKERS QUE EJECUTARAN LA LECTURA DE LOS SENSORES EN UN TIEMPO DETERMINADO
-Ticker RUTINA_TEMP(Rutina_Temperatura, 17000); //En micros segundos
-Ticker RUTINA_HUM(Rutina_Humedad, 21000); //En micros segundos
-Ticker RUTINA_MQ135(Rutina_Gases_Toxicos, 10000); //En micros segundos
-Ticker RUTINA_MQ2(Rutina_Gases_Inflamables, 6000); //En micros segundos
-Ticker RUTINA_LUZ(Rutina_Iluminacion, 10000); //En micros segundos
+Ticker RUTINA_TEMP(Rutina_Temperatura, 14000); //En micros segundos
+Ticker RUTINA_HUM(Rutina_Humedad, 9000); //En micros segundos
+Ticker RUTINA_MQ135(Rutina_Gases_Toxicos, 11000); //En micros segundos
+Ticker RUTINA_MQ2(Rutina_Gases_Inflamables, 19000); //En micros segundos
+Ticker RUTINA_LUZ(Rutina_Iluminacion, 29000); //En micros segundos
 
 //TickTwo para el envio de la informacion
-Ticker RUTINA_ENVIO_I2C(SendPayload_I2C, 25000);
+Ticker RUTINA_ENVIO_I2C(SendPayload_I2C, 60000);
 
 //DEFINICION DE TICKER PARA LOS ACTUADORES
 // Ticker RUTINA_RELAY_1(Elementos_Control, 30000);
@@ -109,14 +109,14 @@ void loop() {
   RUTINA_MQ2.update();
   RUTINA_LUZ.update();
   RUTINA_ENVIO_I2C.update();
-  if(RUTINA_ENVIO_I2C.counter() == 4){
+  if(RUTINA_ENVIO_I2C.counter() == 5){
     //Serial.println(F("Cambio del intervalo"));
-    RUTINA_ENVIO_I2C.interval(50000);
-    RUTINA_TEMP.interval(30000);
-    RUTINA_HUM.interval(35000);
-    RUTINA_MQ135.interval(25000);
-    RUTINA_MQ2.interval(20000);
-    RUTINA_LUZ.interval(27000);
+    RUTINA_ENVIO_I2C.interval(60000*20);
+    RUTINA_TEMP.interval(59000);
+    RUTINA_HUM.interval(58000);
+    RUTINA_MQ135.interval(57000);
+    RUTINA_MQ2.interval(56000);
+    RUTINA_LUZ.interval(55000);
   }
   // RUTINA_RELAY_1.update();
   // if(RUTINA_RELAY_1.counter() == 1) RUTINA_RELAY_1.interval(5000);
@@ -125,14 +125,14 @@ void loop() {
 void Rutina_Temperatura(){
   Serial.println(F("========== TEMPERATURE SENSORS =========="));
   Sensor_DHT22_1.readValueSensor();
-  Serial.print(F("Value of sensor DHT22: "));
+  Serial.print(F("Value of sensor DHT22_1: "));
   Serial.println(Sensor_DHT22_1.getValueSensor(Sensor::DHT_22_TEMPERATURE));
   if(!NODO_TEMPERATURE.addValue(Sensor_DHT22_1.getValueSensor(Sensor::DHT_22_TEMPERATURE))){
       Serial.println(F("- Error de lectura de temperatura en el sensor DHT22_1"));
   }
 
   Sensor_DHT11_1.readValueSensor();
-  Serial.print(F("Value of sensor DHT11: "));
+  Serial.print(F("Value of sensor DHT11_1: "));
   Serial.println(Sensor_DHT11_1.getValueSensor(Sensor::DHT_11_TEMPERATURE));
   if(!NODO_TEMPERATURE.addValue(Sensor_DHT11_1.getValueSensor(Sensor::DHT_11_TEMPERATURE))){
       Serial.println(F("- Error de lectura de temperatura en el sensor DHT11_1"));
@@ -169,14 +169,14 @@ void Rutina_Temperatura(){
 void Rutina_Humedad(){
   Serial.println(F("========== HUMIDITY SENSORS =========="));
   Sensor_DHT22_1.readValueSensor();
-  Serial.print(F("Value of sensor DHT22: "));
+  Serial.print(F("Value of sensor DHT22_1: "));
   Serial.println(Sensor_DHT22_1.getValueSensor(Sensor::DHT_22_HUMIDITY));
   if(!NODO_HUMIDITY.addValue(Sensor_DHT22_1.getValueSensor(Sensor::DHT_22_HUMIDITY))){
     Serial.println(F("- Error en la lectura de la humedad en el sensor DHT22_1"));
   }
 
   Sensor_DHT11_1.readValueSensor();
-  Serial.print(F("Value of sensor DHT11: "));
+  Serial.print(F("Value of sensor DHT11_1: "));
   Serial.println(Sensor_DHT11_1.getValueSensor(Sensor::DHT_11_HUMIDITY));
   if(!NODO_HUMIDITY.addValue(Sensor_DHT11_1.getValueSensor(Sensor::DHT_11_HUMIDITY))){
     Serial.println(F("- Error en la lectura de la humedad en el sensor DHT11_1"));
@@ -265,6 +265,8 @@ void Rutina_Iluminacion(){
 void SendPayload_I2C(){
   Serial.println(F("========== AVERAGES VALUES =========="));
   /*=================== TEMPERATURE ===================*/
+  Serial.println("=> Cantidad de lecturas: "+String(NODO_TEMPERATURE.getCounterSensor()));
+  Serial.println("=> Suma de las lecturas: "+String(NODO_TEMPERATURE.getValues()));
   Serial.print(F("+ Promedio de temperatura: " ));
   NODO_TEMPERATURE.CalculateAvarageValue();
   Serial.println(NODO_TEMPERATURE.getAvarage());
@@ -276,6 +278,8 @@ void SendPayload_I2C(){
   lpp.addTemperature(1, NODO_TEMPERATURE.getAvarage());
   Serial.println();
   /*=================== HUMIDITY ===================*/
+  Serial.println("=> Cantidad de lecturas: "+String(NODO_HUMIDITY.getCounterSensor()));
+  Serial.println("=> Suma de las lecturas: "+String(NODO_HUMIDITY.getValues()));
   Serial.print(F("+ Promedio de humedad: "));
   NODO_HUMIDITY.CalculateAvarageValue();
   Serial.println(NODO_HUMIDITY.getAvarage());
@@ -287,18 +291,24 @@ void SendPayload_I2C(){
   lpp.addRelativeHumidity(1,int(NODO_HUMIDITY.getAvarage())/2);
   Serial.println();
   /*=================== LUMINOSITY ===================*/
+  Serial.println("=> Cantidad de lecturas: "+String(NODO_LIGHT.getCounterSensor()));
+  Serial.println("=> Suma de las lecturas: "+String(NODO_LIGHT.getValues()));
   Serial.print(F("+ Promedio del valor de luminosidad: "));
   NODO_LIGHT.CalculateAvarageValue();
   Serial.println(NODO_LIGHT.getAvarage());
   NODO_LIGHT.resetCounterAvg();
   lpp.addLuminosity(1, NODO_LIGHT.getAvarage());
   /*=================== TOXIC ===================*/
+  Serial.println("=> Cantidad de lecturas: "+String(NODO_TOXIC.getCounterSensor()));
+  Serial.println("=> Suma de las lecturas: "+String(NODO_TOXIC.getValues()));
   Serial.print(F("+ Promedio de valor de deteccion de gases toxicos: "));
   NODO_TOXIC.CalculateAvarageValue();
   Serial.println(NODO_TOXIC.getAvarage());
   NODO_TOXIC.resetCounterAvg();
   lpp.addGasToxic(1, NODO_TOXIC.getAvarage());
   /*=================== FLAMABLE ===================*/
+  Serial.println("=> Cantidad de lecturas: "+String(NODO_FLAMMABLE.getCounterSensor()));
+  Serial.println("=> Suma de las lecturas: "+String(NODO_FLAMMABLE.getValues()));
   Serial.print(F("+ Promedio de valor de deteccion de gases inflamables: "));
   NODO_FLAMMABLE.CalculateAvarageValue();
   Serial.println(NODO_FLAMMABLE.getAvarage());

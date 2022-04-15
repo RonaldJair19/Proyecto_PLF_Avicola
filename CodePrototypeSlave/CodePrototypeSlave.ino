@@ -54,11 +54,11 @@ void eventoRecepcion();
 // void Elementos_Control();
 
 //DEFINICION DE LOS TICKERS QUE EJECUTARAN LA LECTURA DE LOS SENSORES EN UN TIEMPO DETERMINADO
-Ticker RUTINA_TEMP(Rutina_Temperatura, 15000); //En milisegundos
+Ticker RUTINA_TEMP(Rutina_Temperatura, 14000); //En milisegundos
 Ticker RUTINA_HUM(Rutina_Humedad, 9000); //En milisegundos
-Ticker RUTINA_MQ135(Rutina_Gases_Toxicos, 10000); //En milisegundos
-Ticker RUTINA_MQ2(Rutina_Gases_Inflamables, 6000); //En milisegundos
-Ticker RUTINA_LUZ(Rutina_Iluminacion, 10000); //En milisegundos
+Ticker RUTINA_MQ135(Rutina_Gases_Toxicos, 11000); //En milisegundos
+Ticker RUTINA_MQ2(Rutina_Gases_Inflamables, 19000); //En milisegundos
+Ticker RUTINA_LUZ(Rutina_Iluminacion, 29000); //En milisegundos
 
 //TickTwo para el envio de la informacion
 // Ticker RUTINE_AVERAGES(AddAveragesLPP, 21000);
@@ -118,6 +118,21 @@ void loop() {
   RUTINA_MQ135.update();
   RUTINA_MQ2.update();
   RUTINA_LUZ.update();
+  if(RUTINA_TEMP.counter() == 20){
+    RUTINA_TEMP.interval(59000);
+  }
+  if(RUTINA_HUM.counter() == 30){
+    RUTINA_HUM.interval(58000);
+  }
+  if(RUTINA_MQ135.counter() == 25){
+    RUTINA_MQ135.interval(57000);
+  }
+  if(RUTINA_MQ2.counter() == 15){
+    RUTINA_MQ2.interval(56000);
+  }
+  if(RUTINA_LUZ.counter() == 10){
+    RUTINA_LUZ.interval(55000);
+  }
   // RUTINE_AVERAGES.update();
   // RUTINA_ENVIO_I2C.update();
   // if(RUTINA_ENVIO_I2C.counter() == 4){

@@ -11,9 +11,9 @@
 
 
 /* ABP ACTIVATION*/
-const char* devAddr = ""; // Change to TTN Device Address
-const char* nwkSKey = ""; // Change to TTN Network Session Key
-const char* appSKey = ""; // Change to TTN Application Session Key
+const char* devAddr = "260C83C4"; // Change to TTN Device Address
+const char* nwkSKey = "51A668BF67D6E695B7814A4BE2EB6455"; // Change to TTN Network Session Key
+const char* appSKey = "3AD3C26A5C6AEF4A98873C679230C7AC"; // Change to TTN Application Session Key
 
 TTN_esp32 ttn ;
 
@@ -29,7 +29,10 @@ TTN_esp32 ttn ;
 void receivePayload();
 void message(const uint8_t* payload, size_t size, int rssi);
 
-TickTwo routineReceivePayload(receivePayload, 30000*2);
+  /* ======================================================================*/
+  /*      Inicia leyendo (I2C) y enviando (loRa) lecturas cada minuto      */
+  /* ======================================================================*/
+TickTwo routineReceivePayload(receivePayload, 60000);
 
 uint8_t BYTE_CONTROL_BEGIN = 1;
 uint8_t BYTE_CONTROL_END = 9;
@@ -67,8 +70,20 @@ void setup() {
 
 void loop() {
   routineReceivePayload.update();
+  /* =============================================================*/
+  /*      Pasado la lectura (I2C) y envío (loRa) de 5 paquetes    */
+  /*      Se ajusta para leer/enviar cada 5 minutos               */
+  /* =============================================================*/
   if(routineReceivePayload.counter() == 5){
     routineReceivePayload.interval(60000*5);
+  }
+  /* ===========================================================================*/
+  /*      Pasado la lectura (I2C) y envío (loRa) de 4 paquetes cada 5 minutos   */
+  /*      En el contador se suman las 5 paquetes ya pasadas mas las 4 nuevas    */
+  /*      Se ajusta para leer/enviar cada 20 minutos                            */
+  /* ===========================================================================*/
+  if(routineReceivePayload.counter() == 9){
+    routineReceivePayload.interval(60000*20);
   }
 }
 
@@ -114,7 +129,7 @@ void receivePayload(){
       /* ===========Envio a TTN============ */ 
       if (ttn.sendBytes(buffer, (sizeBuffer-2))){
         Serial.println("Size buffer sending: " + String(sizeBuffer-2));
-        Serial.printf(" Payload enviado a TTN: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],buffer[8]);
+        Serial.printf("=> Payload sending to TTN: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],buffer[8]);
       }
       /* ======================= */ 
       Wire.beginTransmission(23);
