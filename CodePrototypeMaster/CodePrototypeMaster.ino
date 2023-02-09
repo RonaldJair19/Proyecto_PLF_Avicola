@@ -5,15 +5,15 @@
 #include <TTN_esp32.h>
 
 /*  OTAA Activation   */
-// const char* devEui = "70B3D57ED004F03A"; // Change to TTN Device EUI
-// const char* appEui = "9876543211234567"; // Change to TTN Application EUI
-// const char* appKey = "7C81D4E0379682EDFECFEB98F1E3186A"; // Chaneg to TTN Application Key
+// const char* devEui = ""; // Change to TTN Device EUI
+// const char* appEui = ""; // Change to TTN Application EUI
+// const char* appKey = ""; // Chaneg to TTN Application Key
 
 
 /* ABP ACTIVATION*/
-const char* devAddr = "260C83C4"; // Change to TTN Device Address
-const char* nwkSKey = "51A668BF67D6E695B7814A4BE2EB6455"; // Change to TTN Network Session Key
-const char* appSKey = "3AD3C26A5C6AEF4A98873C679230C7AC"; // Change to TTN Application Session Key
+const char* devAddr = ""; // Change to TTN Device Address
+const char* nwkSKey = ""; // Change to TTN Network Session Key
+const char* appSKey = ""; // Change to TTN Application Session Key
 
 TTN_esp32 ttn ;
 
