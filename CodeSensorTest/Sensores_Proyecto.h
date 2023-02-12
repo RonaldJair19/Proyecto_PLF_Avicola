@@ -75,14 +75,26 @@ class Sensor{
 };
 
 
-class Control_Element{
+class ControlElement{
     private:    
         int _pin_element;
         bool _state;
     public:
-    Control_Element(int pin);
-    Control_Element();
+    ControlElement(int pin);
+    ControlElement();
     bool getState();
     void setOnElement();
     void setOffElement();
+};
+
+
+class Evaluator{
+    public:
+    Evaluator(NodeSensor *nodeSensor, ControlElement *controlElement);
+    NodeSensor *nodeSensor;
+    ControlElement *controlElement;
+    float _latestAverage;
+    float _minimumRangeValue, _maximumRangeValue;
+    void evaluateVariable();
+
 };

@@ -219,25 +219,40 @@ int Sensor::getPinSensor(){
 
 
 /*METODOS DE LA CLASE CONTROL STATE*/
-bool Control_Element::getState(){
+bool ControlElement::getState(){
         return _state;
     }
-Control_Element::Control_Element(int pin){
+ControlElement::ControlElement(int pin){
     _pin_element = pin;
     pinMode(_pin_element, OUTPUT);
     _state = false;
 }
 
-Control_Element::Control_Element(){
+ControlElement::ControlElement(){
     _state = false;
 }
 
-void Control_Element::setOnElement(){
+void ControlElement::setOnElement(){
     _state = true;
     digitalWrite(_pin_element, HIGH);
 }
 
-void Control_Element::setOffElement(){
+void ControlElement::setOffElement(){
     _state = false;
     digitalWrite(_pin_element, LOW);
+}
+
+//Methods of the class Comparator
+Evaluator::Evaluator(NodeSensor *nodeSensor, ControlElement *controlElement) : nodeSensor(nodeSensor), controlElement(controlElement){}
+
+void Evaluator::evaluateVariable(){
+    _latestAverage = nodeSensor->getValues()/nodeSensor->getCounterSensor();
+    if(!controlElement->getState()){
+        if(_latestAverage < _minimumRangeValue && _latestAverage > _maximumRangeValue){
+            controlElement->setOnElement();
+        }
+        else{
+            controlElement->setOffElement();
+        }
+    }
 }
