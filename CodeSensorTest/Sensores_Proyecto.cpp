@@ -223,36 +223,107 @@ bool ControlElement::getState(){
         return _state;
     }
 ControlElement::ControlElement(int pin){
+    _useIdentifier = NO_USE;
     _pin_element = pin;
     pinMode(_pin_element, OUTPUT);
     _state = false;
 }
 
 ControlElement::ControlElement(){
+    _useIdentifier = NO_USE;
     _state = false;
 }
 
-void ControlElement::setOnElement(){
+void ControlElement::setOnElement(Employer_Identifier useIdentifier){
+    _useIdentifier = useIdentifier;
     _state = true;
     digitalWrite(_pin_element, HIGH);
 }
 
 void ControlElement::setOffElement(){
+    _useIdentifier = NO_USE;
     _state = false;
     digitalWrite(_pin_element, LOW);
 }
 
+ControlElement::Employer_Identifier ControlElement::getUseIdentifier(){
+    return _useIdentifier;
+}
+
+
 //Methods of the class Comparator
-Evaluator::Evaluator(NodeSensor *nodeSensor, ControlElement *controlElement) : nodeSensor(nodeSensor), controlElement(controlElement){}
+Evaluator::Evaluator(NodeSensor *nodeSensor, ControlElement *controlElement) : nodeSensor(nodeSensor), controlElement(controlElement){
+    _latestAverage = 0;
+}
+
+Evaluator::Evaluator(NodeSensor *nodeSensor, ControlElement *controlElement, Employer_Identifier employerId) : nodeSensor(nodeSensor), controlElement(controlElement){
+    _employer_identifier = employerId;
+    _latestAverage = 0;
+    // Serial.print("Employer_identifier: ");
+    // Serial.print(_employer_identifier);
+    // Serial.println(".");
+}
 
 void Evaluator::evaluateVariable(){
-    _latestAverage = nodeSensor->getValues()/nodeSensor->getCounterSensor();
-    if(!controlElement->getState()){
-        if(_latestAverage < _minimumRangeValue && _latestAverage > _maximumRangeValue){
-            controlElement->setOnElement();
+    if(nodeSensor->getCounterSensor() != 0 || isnan(nodeSensor->getCounterSensor())){
+        _latestAverage = nodeSensor->getValues()/nodeSensor->getCounterSensor();
+        // Serial.print(F("Average of variable: "));
+        // Serial.print(_latestAverage);
+        // Serial.println(F("."));
+        // if(!controlElement->getState()){ //if the control element is switched off
+        //     if(_latestAverage >= _minimumRangeValue && _latestAverage <= _maximumRangeValue){
+        //         controlElement->setOnElement(_employer_identifier);
+        //     }
+        //     else{
+        //         controlElement->setOffElement();
+        //     }
+        // }
+        if(_latestAverage >= _minimumRangeValue && _latestAverage <= _maximumRangeValue){
+            if(!controlElement->getState()){
+                    controlElement->setOnElement(_employer_identifier);
+                    // Serial.print(F("Elemento de control encendido controlElement->getUseIdentifier(): "));
+                    // Serial.print(controlElement->getUseIdentifier());
+                    // Serial.println(F("."));
+                }
+            // else if(controlElement->getState() && controlElement->getUseIdentifier() == _employer_identifier){
+            //         controlElement->setOffElement();
+            // }
         }
         else{
-            controlElement->setOffElement();
+            if(controlElement->getState() && controlElement->getUseIdentifier() == _employer_identifier){
+                    controlElement->setOffElement();
+                    // Serial.println(F("Elemento de control apagado: controlElement->getUseIdentifier(): "));
+                    // Serial.print(controlElement->getUseIdentifier());
+                    // Serial.println(F("."));
+            }
         }
     }
+}
+
+void Evaluator::setMinimumRangeValue(float minimumRangeValue){
+    _minimumRangeValue = minimumRangeValue;
+}
+
+void Evaluator::setMaximumRangeValue(float maximumRangeValue){
+    _maximumRangeValue = maximumRangeValue;
+}
+
+float Evaluator::getMinimumRangeValue(){
+    return _minimumRangeValue;
+}
+
+float Evaluator::getMaximumRangeValue(){
+    return _maximumRangeValue;
+}
+
+void Evaluator::setEmployerIdentifier(Employer_Identifier employerId){
+    _employer_identifier = employerId;
+}
+
+Evaluator::Employer_Identifier Evaluator::getEmployerIdentifier(){
+    return _employer_identifier;
+}
+
+float Evaluator::getAvgEvaluator(){
+    return _latestAverage;
 }

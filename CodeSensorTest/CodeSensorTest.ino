@@ -20,6 +20,11 @@ char payloadString[50] = {0};
 #define MQ135_0_PIN A0
 #define MQ135_1_PIN A1
 #define MQ135_2_PIN A2
+#define RELAY_FAN_PIN 8
+#define RELAY_HUMIDITY_SYSTEM_PIN 9
+#define RELAY_INFRARED_BULBS_PIN 10
+#define RELAY_INCANDESCENT_BULBS_PIN 11
+
 
 // DEFINICION DE LOS OBJETOS NODO PARA CADA VARIABLE A MONITORIZAR
 NodeSensor NODO_TEMPERATURE(NodeSensor::VARIABLE_TEMPERATURE);
@@ -29,17 +34,26 @@ NodeSensor NODO_FLAMMABLE(NodeSensor::VARIABLE_FLAMMABLE);
 NodeSensor NODO_LIGHT(NodeSensor::VARIABLE_LIGHT);
 
 //DEFINICION DE LOS VALORES DE REFERENCIA PARA LOS SENSORES
-const int LIGHT_REFERENCE = 400;
+const float TEMPERATURE_DOWN_MAX_REFERENCE = 29.0;
+const float TEMPERATURE_DOWN_MIN_REFERENCE = 0;
 
-const float TEMPERATURE_MIN_REFERENCE = 10.0;
-const float TEMPERATURE_MAX_REFERENCE = 30.0;
+const float TEMPERATURE_UP_MAX_REFERENCE = 50.0;
+const float TEMPERATURE_UP_MIN_REFERENCE = 30.10;
 
-const int HUMIDITY_MIN_REFERENCE = 10;
-const int HUMIDITY_MAX_REFERENCE = 90;
+const float HUMIDITY_DOWN_MAX_REFERENCE = 40.1;
+const float HUMIDITY_DOWN_MIN_REFERENCE = 0;
 
-const int FLAMMABLE_MAX_REFERENCE = 200;
+const float HUMIDITY_UP_MAX_REFERENCE = 100;
+const float HUMIDITY_UP_MIN_REFERENCE = 54.0;
 
-const int TOXIC_MAX_REFERENCE = 900;
+const float FLAMMABLE_UP_MAX_REFERENCE = 1000;
+const float FLAMMABLE_UP_MIN_REFERENCE = 400;
+
+const float TOXIC_UP_MAX_REFERENCE = 400;
+const float TOXIC_UP_MIN_REFERENCE = 1000;
+
+const float LIGHT_DOWN_MAX_REFERENCE = 400;
+const float LIGHT_DOWN_MIN_REFERENCE = 0;
 
 //DEFINICION DE LAS FUNCIONES PARA LEER DATOS DESDE LOS SENSORES Y OBTENER UN PROMEDIO
 void Rutina_Temperatura();
@@ -49,6 +63,11 @@ void Rutina_Gases_Toxicos();
 void Rutina_Iluminacion();
 void SendPayload_I2C();
 // void Elementos_Control();
+void TemperatureEvaluation();
+void HumidityEvaluation();
+void ToxicGasEvaluation();
+void FlammableGasEvaluation();
+void LuminosityEvaluation();
 
 //DEFINICION DE LOS TICKERS QUE EJECUTARAN LA LECTURA DE LOS SENSORES EN UN TIEMPO DETERMINADO
 Ticker RUTINA_TEMP(Rutina_Temperatura, 14000); //En micros segundos
@@ -61,7 +80,11 @@ Ticker RUTINA_LUZ(Rutina_Iluminacion, 29000); //En micros segundos
 Ticker RUTINA_ENVIO_I2C(SendPayload_I2C, 60000);
 
 //DEFINICION DE TICKER PARA LOS ACTUADORES
-// Ticker RUTINA_RELAY_1(Elementos_Control, 30000);
+Ticker ROUTINE_TEMPERATURE_EVALUATION(TemperatureEvaluation, 30000);
+Ticker ROUTINE_HUMIDITY_EVALUATION(HumidityEvaluation, 32000);
+Ticker ROUTINE_TOXIC_GAS_EVALUATION(ToxicGasEvaluation, 34000);
+Ticker ROUTINE_FLAMMABLE_GAS_EVALUATION(FlammableGasEvaluation, 36000);
+Ticker ROUTINE_LUMINOSITY_EVALUATION(LuminosityEvaluation, 38000);
 
 //DEFINICION DE LOS PINES Y TIPO DE SENSOR
 
@@ -92,22 +115,59 @@ Sensor SensorBH1750_1(Sensor::BH_1735); // SCL ---> A5 | SDA ---> A4
 
 
 
-//ELEMENTOS DE CONTROL
-// Control_Element Relay_Abanicos(8);
-// Control_Element Relay_Inflarojos(7);
-// Control_Element Relay_Iluminacion(6);
-// Control_Element Relay_Humificador(2);
+//Controls element (fan, humidity system, infrared bulbs, incandescent bulb)
+ControlElement RelayFan(RELAY_FAN_PIN);
+ControlElement RelayHumiditySystem(RELAY_HUMIDITY_SYSTEM_PIN);
+ControlElement RelayInfraredBulbs(RELAY_INFRARED_BULBS_PIN);
+ControlElement RelayIncandescentBulbs(RELAY_INCANDESCENT_BULBS_PIN);
+
+//Evaluators
+Evaluator TemperatureDownEvaluator(&NODO_TEMPERATURE, &RelayFan, Evaluator::TEMPERATURE_DOWN);
+Evaluator TemperatureUpEvaluator(&NODO_TEMPERATURE, &RelayInfraredBulbs, Evaluator::TEMPERATURE_UP);
+Evaluator HumidityDownEvaluator(&NODO_HUMIDITY, &RelayHumiditySystem, Evaluator::HUMIDITY_DOW);
+Evaluator HumidityUpEvaluator(&NODO_HUMIDITY, &RelayInfraredBulbs, Evaluator::HUMIDITY_UP);
+Evaluator ToxicUpEvaluator(&NODO_TOXIC, &RelayFan, Evaluator::TOXIC_UP);
+Evaluator FlammableUpEvaluator(&NODO_FLAMMABLE, &RelayFan, Evaluator::FLAMMABLE_UP);
+Evaluator LuminosityDownEvaluator(&NODO_LIGHT, &RelayIncandescentBulbs, Evaluator::LUMINOSITY_DOWN);
+
+
 
 void setup() {
+  TemperatureDownEvaluator.setMaximumRangeValue(TEMPERATURE_DOWN_MAX_REFERENCE);
+  TemperatureDownEvaluator.setMinimumRangeValue(TEMPERATURE_DOWN_MIN_REFERENCE);
+
+  TemperatureUpEvaluator.setMaximumRangeValue(TEMPERATURE_UP_MAX_REFERENCE);
+  TemperatureUpEvaluator.setMinimumRangeValue(TEMPERATURE_UP_MIN_REFERENCE);
+
+  HumidityDownEvaluator.setMaximumRangeValue(HUMIDITY_DOWN_MAX_REFERENCE);
+  HumidityDownEvaluator.setMinimumRangeValue(HUMIDITY_DOWN_MIN_REFERENCE);
+
+  HumidityUpEvaluator.setMaximumRangeValue(HUMIDITY_UP_MAX_REFERENCE);
+  HumidityUpEvaluator.setMinimumRangeValue(HUMIDITY_UP_MIN_REFERENCE);
+
+  ToxicUpEvaluator.setMaximumRangeValue(TOXIC_UP_MAX_REFERENCE);
+  ToxicUpEvaluator.setMinimumRangeValue(TOXIC_UP_MIN_REFERENCE);
+
+  FlammableUpEvaluator.setMaximumRangeValue(FLAMMABLE_UP_MAX_REFERENCE);
+  FlammableUpEvaluator.setMinimumRangeValue(FLAMMABLE_UP_MIN_REFERENCE);
+
+  LuminosityDownEvaluator.setMaximumRangeValue(LIGHT_DOWN_MAX_REFERENCE);
+  LuminosityDownEvaluator.setMinimumRangeValue(LIGHT_DOWN_MIN_REFERENCE);
+
+
   Serial.begin(9600);
-  Serial.println(F("Iniciando..."));
   RUTINA_TEMP.start();
   RUTINA_HUM.start();
   RUTINA_MQ135.start();
   RUTINA_MQ2.start();
   RUTINA_LUZ.start();
   RUTINA_ENVIO_I2C.start();
-  // RUTINA_RELAY_1.start();
+  ROUTINE_TEMPERATURE_EVALUATION.start();
+  ROUTINE_HUMIDITY_EVALUATION.start();
+  ROUTINE_TOXIC_GAS_EVALUATION.start();
+  ROUTINE_FLAMMABLE_GAS_EVALUATION.start();
+  ROUTINE_LUMINOSITY_EVALUATION.start();
+  Serial.println(F("Iniciando..."));
 }
 
 void loop() {
@@ -126,8 +186,11 @@ void loop() {
     RUTINA_MQ2.interval(56000);
     RUTINA_LUZ.interval(55000);
   }
-  // RUTINA_RELAY_1.update();
-  // if(RUTINA_RELAY_1.counter() == 1) RUTINA_RELAY_1.interval(5000);
+  ROUTINE_TEMPERATURE_EVALUATION.update();
+  ROUTINE_HUMIDITY_EVALUATION.update();
+  ROUTINE_TOXIC_GAS_EVALUATION.update();
+  ROUTINE_FLAMMABLE_GAS_EVALUATION.update();
+  ROUTINE_LUMINOSITY_EVALUATION.update();
 }
 
 void Rutina_Temperatura(){
@@ -319,6 +382,44 @@ void Rutina_Iluminacion(){
   }
 }
 
+
+//Control elements routines
+void TemperatureEvaluation(){
+  TemperatureDownEvaluator.evaluateVariable();
+  Serial.print(F("Temp down:"));
+  Serial.println(TemperatureDownEvaluator.getAvgEvaluator());
+  TemperatureUpEvaluator.evaluateVariable();
+  Serial.print(F("Temp up:"));
+  Serial.println(TemperatureUpEvaluator.getAvgEvaluator());
+}
+
+void HumidityEvaluation(){
+  HumidityDownEvaluator.evaluateVariable();
+  Serial.print(F("Hum down:"));
+  Serial.println(HumidityDownEvaluator.getAvgEvaluator());
+  HumidityUpEvaluator.evaluateVariable();
+  Serial.print(F("Hum up:"));
+  Serial.println(HumidityUpEvaluator.getAvgEvaluator());
+}
+
+void ToxicGasEvaluation(){
+  ToxicUpEvaluator.evaluateVariable();
+  Serial.print(F("Toxic up:"));
+  Serial.println(ToxicUpEvaluator.getAvgEvaluator());
+}
+
+void FlammableGasEvaluation(){
+  FlammableUpEvaluator.evaluateVariable();
+  Serial.print(F("Flammable up:"));
+  Serial.println(FlammableUpEvaluator.getAvgEvaluator());
+}
+
+void LuminosityEvaluation(){
+  LuminosityDownEvaluator.evaluateVariable();
+  Serial.print(F("Lumm down:"));
+  Serial.println(LuminosityDownEvaluator.getAvgEvaluator());
+}
+
 void SendPayload_I2C(){
   Serial.println(F("------------------------------- AVERAGES VALUES -------------------------------"));
   /*=================== TEMPERATURE ===================*/
@@ -389,81 +490,3 @@ void SendPayload_I2C(){
   Serial.println(payloadString);
   lpp.reset();
 }
-
-
-
-// void Elementos_Control(){
-//   //TEMPERATURA ALTA
-//   if (NODO_TEMPERATURE.getAvarage() > TEMPERATURE_MAX_REFERENCE){
-//     if (!Relay_Abanicos.getState()){
-//       Relay_Abanicos.setOnElement();
-//       Serial.println(F("\t - Abanicos encendidos"));
-//     }
-//     if(Relay_Inflarojos.getState()){
-//       Relay_Inflarojos.setOffElement();
-//       Serial.println(F("\t - Luces Inflarojas encendidas"));
-//     }
-//   }
-//   //TEMPERATURA BAJA
-//   if(NODO_TEMPERATURE.getAvarage() < TEMPERATURE_MIN_REFERENCE){
-//     if(Relay_Abanicos.getState()){
-//       Relay_Abanicos.setOffElement();
-//       Serial.println(F("\t - Abanicos apagados"));
-//     }
-//     if(!Relay_Inflarojos.getState()){
-//       Relay_Inflarojos.setOnElement();
-//       Serial.println(F("\t - Luces inflarojas encendidas"));
-//     }
-//   }
-//   //HUMEDAD RELATIVA BAJA
-//   if (NODO_HUMIDITY.getAvarage() <= HUMIDITY_MIN_REFERENCE){
-//     if (!Relay_Humificador.getState()){
-//       Relay_Humificador.setOnElement();
-//       Serial.println(F("\t - Humificador encendido"));
-//     }
-//   }
-
-//   //HUMEDAD RELATIVA ALTA
-//   if (NODO_HUMIDITY.getAvarage() >= HUMIDITY_MAX_REFERENCE){
-//     if(Relay_Humificador.getState()){
-//       Relay_Humificador.setOffElement();
-//       Serial.println(F("\t - Humificador apagado"));
-//     }
-//     if(!Relay_Abanicos.getState()){
-//       Relay_Abanicos.setOnElement();
-//       Serial.println(F("\t - Abanicos encendido"));
-//     }
-//     if(!Relay_Inflarojos.getState()){
-//       Relay_Inflarojos.setOnElement();
-//       Serial.println(F("\t - Luces inflarojas encendidas"));
-//     }      
-//   }
-
-//   //NIVEL DE GAS INFLAMABLE ALTO
-//   if (NODO_FLAMMABLE.getAvarage() > FLAMMABLE_MAX_REFERENCE){
-//     if(!Relay_Abanicos.getState()){
-//       Relay_Abanicos.setOnElement();
-//       Serial.println(F("\t - Abanicos encendidos [FLAMMABLE]"));
-//     } 
-//   }
-  
-//   //NIVEL DE GASES TOXICOS ALTO
-//   if (NODO_TOXIC.getAvarage() > TOXIC_MAX_REFERENCE){
-//     if(!Relay_Abanicos.getState())
-//       Relay_Abanicos.setOnElement();
-//       Serial.println(F("\t - Abanicos encendidos"));
-//   }
-
-//   //ILUMINACION BAJA
-//   if (NODO_LIGHT.getAvarage() < LIGHT_REFERENCE){
-//     if (!Relay_Iluminacion.getState()){
-//       Relay_Iluminacion.setOnElement();
-//       Serial.println(F("\t - Luces encendidas "));
-//     }
-//   }
-//   else{
-//     Relay_Iluminacion.setOffElement();
-//     Serial.println(F("\t - Luces apagadas "));
-//   }
-  
-// }

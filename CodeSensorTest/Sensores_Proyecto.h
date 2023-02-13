@@ -75,26 +75,52 @@ class Sensor{
 };
 
 
-class ControlElement{
+class IdentifierEmployer{
+    public:
+        enum Employer_Identifier{
+        NO_USE,
+        TEMPERATURE_DOWN,
+        TEMPERATURE_UP,
+        HUMIDITY_DOW,
+        HUMIDITY_UP,
+        TOXIC_UP,
+        FLAMMABLE_UP,
+        LUMINOSITY_DOWN
+    };
+};
+
+class ControlElement : public IdentifierEmployer{
     private:    
         int _pin_element;
         bool _state;
+        Employer_Identifier _useIdentifier;
     public:
     ControlElement(int pin);
     ControlElement();
     bool getState();
-    void setOnElement();
+    void setOnElement(Employer_Identifier useIdentifier);
     void setOffElement();
+    Employer_Identifier getUseIdentifier();
 };
 
 
-class Evaluator{
+class Evaluator : public IdentifierEmployer{
     public:
-    Evaluator(NodeSensor *nodeSensor, ControlElement *controlElement);
     NodeSensor *nodeSensor;
     ControlElement *controlElement;
     float _latestAverage;
     float _minimumRangeValue, _maximumRangeValue;
-    void evaluateVariable();
+    Employer_Identifier _employer_identifier;
 
+    Evaluator(NodeSensor *nodeSensor, ControlElement *controlElement);
+    Evaluator(NodeSensor *nodeSensor, ControlElement *controlElement, Employer_Identifier employerId);
+    void evaluateVariable();
+    void setMinimumRangeValue(float minimumRangeValue);
+    void setMaximumRangeValue(float maximumRangeValue);
+    void setEmployerIdentifier(Employer_Identifier employerId);
+    float getMinimumRangeValue();
+    float getMaximumRangeValue();
+    float getAvgEvaluator();
+    Employer_Identifier getEmployerIdentifier();
 };
+
