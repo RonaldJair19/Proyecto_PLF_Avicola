@@ -3,17 +3,7 @@
 #include "heltec.h"
 #include <TickTwo.h>
 #include <TTN_esp32.h>
-
-/*  OTAA Activation   */
-// const char* devEui = ""; // Change to TTN Device EUI
-// const char* appEui = ""; // Change to TTN Application EUI
-// const char* appKey = ""; // Chaneg to TTN Application Key
-
-
-/* ABP ACTIVATION*/
-const char* devAddr = ""; // Change to TTN Device Address
-const char* nwkSKey = ""; // Change to TTN Network Session Key
-const char* appSKey = ""; // Change to TTN Application Session Key
+#include "LoRaConfig.h"
 
 TTN_esp32 ttn ;
 
@@ -28,9 +18,8 @@ TTN_esp32 ttn ;
 
 void receivePayload();
 void message(const uint8_t* payload, size_t size, int rssi);
-
   /* ======================================================================*/
-  /*      Inicia leyendo (I2C) y enviando (loRa) lecturas cada minuto      */
+  /*      Initiates reading (I2C) and sending (loRa) readings every minute */
   /* ======================================================================*/
 TickTwo routineReceivePayload(receivePayload, 60000);
 
@@ -51,16 +40,6 @@ void setup() {
   ttn.onMessage(message); // declare callback function when is downlink from server
   /* =========ABP Activation==========*/
   ttn.personalize(devAddr, nwkSKey, appSKey);
-  /* =========OTAA Activation==========*/
-  // ttn.join(devEui, appEui, appKey);
-  // Serial.print("Joining TTN ");
-  // while (!ttn.isJoined())
-  // {
-  //     Serial.print(".");
-  //     delay(500);
-  // }
-  // Serial.println("\njoined !");
-  /* ===================*/
   ttn.showStatus();
   Wire.begin(SDA,SCL);
   Wire.setClock(100000);
