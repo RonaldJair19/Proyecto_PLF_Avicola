@@ -4,17 +4,22 @@
 #include <TickTwo.h>
 #include <TTN_esp32.h>
 #include "LoRaConfig.h"
+#define I2C_Freq 100000
+#define SDA_0 21
+#define SCL_0 22
+ 
+TwoWire I2C_0 = TwoWire(0);
 
 TTN_esp32 ttn ;
 
-#if defined( Wireless_Stick_Lite )
-  #include <Wire.h>
-  #include "oled/SSD1306Wire.h"
-  static const uint8_t SCL_OLED = 15;
-  static const uint8_t SDA_OLED = 4;
-  // static const uint8_t BYTE_CONTROL_BEGIN = 1;
-  // static const uint8_t BYTE CONTROL_END = 9;
-#endif
+// #if defined( Wireless_Stick_Lite )
+//   #include <Wire.h>
+//   #include "oled/SSD1306Wire.h"
+//   static const uint8_t SCL_OLED = 15;
+//   static const uint8_t SDA_OLED = 4;
+//   // static const uint8_t BYTE_CONTROL_BEGIN = 1;
+//   // static const uint8_t BYTE CONTROL_END = 9;
+// #endif
 
 void receivePayload();
 void message(const uint8_t* payload, size_t size, int rssi);
@@ -35,16 +40,18 @@ char payloadString[50] = {0};
 byte byteReceivedEnd, byteReceivedInit;
 
 void setup() {
-  Heltec.begin(false /*Display Enable*/, true /*LoRa Disable*/, true /*Serial Enable*/);
+  Heltec.begin(true /*Display Enable*/, true /*LoRa Disable*/, true /*Serial Enable*/);
   ttn.begin();
   ttn.onMessage(message); // declare callback function when is downlink from server
   /* =========ABP Activation==========*/
   ttn.personalize(devAddr, nwkSKey, appSKey);
   ttn.showStatus();
-  Wire.begin(SDA,SCL);
-  Wire.setClock(100000);
+  // Wire.begin(SDA,SCL);
+  // Wire.setClock(100000);
+  I2C_0.begin(SDA_0 , SCL_0 , I2C_Freq);
   Serial.println(F("Iniciando..."));
   routineReceivePayload.start();
+  Serial.begin(115200);
 }
 
 void loop() {
@@ -68,24 +75,24 @@ void loop() {
 
 
 void receivePayload(){
-  Wire.beginTransmission(23);
-  Wire.write('S');
-  Wire.endTransmission();
+  I2C_0.beginTransmission(23);
+  I2C_0.write('S');
+  I2C_0.endTransmission();
 
-  Wire.requestFrom(23, 1);
+  I2C_0.requestFrom(23, 1);
   
-  byte sizeBuffer = Wire.read();
+  byte sizeBuffer = I2C_0.read();
   buffer = (uint8_t*)malloc(sizeBuffer);
   Serial.println(F("===================================================="));
   Serial.println("Cantidad del Buffer a recibir: "+ String(sizeBuffer));
-  Wire.requestFrom(23, (int)sizeBuffer); 
+  I2C_0.requestFrom(23, (int)sizeBuffer); 
 
-  byteReceivedInit = Wire.read();
+  byteReceivedInit = I2C_0.read();
   Serial.println("Byte de control inicial: "+ String(byteReceivedInit));
   
   if(byteReceivedInit == BYTE_CONTROL_BEGIN){
-    while (Wire.available()) { 
-      byte byteReceived = Wire.read();
+    while (I2C_0.available()) { 
+      byte byteReceived = I2C_0.read();
       if(i < 9){
         buffer[i] = byteReceived;
         Serial.println("Byte["+String(i)+"]: "+String(byteReceived));         // print the character
@@ -111,11 +118,11 @@ void receivePayload(){
         Serial.printf("=> Payload sending to TTN: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],buffer[8]);
       }
       /* ======================= */ 
-      Wire.beginTransmission(23);
-      Wire.write('R');
-      Wire.write(dataLength);
-      Wire.write(data,dataLength);
-      Wire.endTransmission();
+      I2C_0.beginTransmission(23);
+      I2C_0.write('R');
+      I2C_0.write(dataLength);
+      I2C_0.write(data,dataLength);
+      I2C_0.endTransmission();
       /* ======================= */ 
     }
     else{
@@ -139,9 +146,9 @@ void message(const uint8_t* payload, size_t size, int rssi){
     Serial.print(" " + String(payload[i])+" ");
     // Serial.write(payload[i]);
   }
-  // Wire.beginTransmission(23);
-  // Wire.write('R');
-  // Wire.write(payload,size);
-  // Wire.endTransmission();
+  // I2C_0.beginTransmission(23);
+  // I2C_0.write('R');
+  // I2C_0.write(payload,size);
+  // I2C_0.endTransmission();
   Serial.println();
 }

@@ -94,8 +94,8 @@ Ticker ROUTINE_TOXIC_GAS_EVALUATION(ToxicGasEvaluation, 34000);
 Ticker ROUTINE_FLAMMABLE_GAS_EVALUATION(FlammableGasEvaluation, 36000);
 Ticker ROUTINE_LUMINOSITY_EVALUATION(LuminosityEvaluation, 38000);
 
-//TickTwo para el envio de la informacion
-// Ticker RUTINE_AVERAGES(AddAveragesLPP, 21000);
+//Ticker for calculate averages value for the node sensors
+Ticker RUTINE_AVERAGES(AddAveragesLPP, 50000);
 
 //Definition of sensor objects
 //----------DHT22----------
@@ -138,9 +138,10 @@ Evaluator LuminosityDownEvaluator(&NODO_LIGHT, &RelayIncandescentBulbs, Evaluato
 
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   // Serial.println(F("Iniciando..."));
-  Wire.begin(23);                // join the i2c bus with address #23
+  Wire.begin(23);
+  Wire.setClock(100000);// unirse al bus i2c con la direccion #23
   Wire.onRequest(RequestingEvent); // record data request event
   Wire.onReceive(ReceptionEvent); // record data reception event
   //Setting values for automation 
@@ -177,9 +178,11 @@ void setup() {
   ROUTINE_TOXIC_GAS_EVALUATION.start();
   ROUTINE_FLAMMABLE_GAS_EVALUATION.start();
   ROUTINE_LUMINOSITY_EVALUATION.start();
+  
+  RUTINE_AVERAGES.start();
+  
   Serial.println(F("Iniciando..."));
 
-  // RUTINE_AVERAGES.start();
   // RUTINA_RELAY_1.start();
 }
 
@@ -204,7 +207,7 @@ void loop() {
   if(ROUTINE_LIGHT.counter() == 10){
     ROUTINE_LIGHT.interval(55000);
   }
-  // RUTINE_AVERAGES.update();
+  RUTINE_AVERAGES.update();
   // RUTINA_ENVIO_I2C.update();
   // if(RUTINA_ENVIO_I2C.counter() == 4){
   //   //Serial.println(F("Cambio del intervalo"));
@@ -314,31 +317,56 @@ void LuminosityEvaluation(){
 //Calculate averages of variables per I2C request
 
 void AddAveragesLPP(){
+  Serial.println(F("------------------------------- AVERAGES VALUES -------------------------------"));
+  /*=================== TEMPERATURE ===================*/
+  Serial.println(F("========== TEMPERATURE  =========="));
+  Serial.println("=> Cantidad de lecturas: "+String(NODO_TEMPERATURE.getCounterSensor()));
+  Serial.println("=> Suma de las lecturas: "+String(NODO_TEMPERATURE.getValues()));
   NODO_TEMPERATURE.CalculateAvarageValue();
+  Serial.print(F("+ Promedio de temperatura " ));
+  Serial.println(NODO_TEMPERATURE.getAvarage());
   NODO_TEMPERATURE.resetCounterAvg();
   lpp.addTemperature(1, NODO_TEMPERATURE.getAvarage());
 
   /*=================== HUMIDITY ===================*/
+  Serial.println(F("========== HUMIDITY  =========="));
+  Serial.println("=> Cantidad de lecturas: "+String(NODO_HUMIDITY.getCounterSensor()));
+  Serial.println("=> Suma de las lecturas: "+String(NODO_HUMIDITY.getValues()));
   NODO_HUMIDITY.CalculateAvarageValue();
+  Serial.print(F("+ Promedio de humedad: "));
+  Serial.println(NODO_HUMIDITY.getAvarage());
   NODO_HUMIDITY.resetCounterAvg();
   lpp.addRelativeHumidity(1,int(NODO_HUMIDITY.getAvarage())/2);
 
   /*=================== LUMINOSITY ===================*/
+  Serial.println(F("========== LUMINOSITY  =========="));
+  Serial.println("=> Cantidad de lecturas: "+String(NODO_LIGHT.getCounterSensor()));
+  Serial.println("=> Suma de las lecturas: "+String(NODO_LIGHT.getValues()));
+  Serial.print(F("+ Promedio del valor de luminosidad: "));
   NODO_LIGHT.CalculateAvarageValue();
+  Serial.println(NODO_LIGHT.getAvarage());
   NODO_LIGHT.resetCounterAvg();
   lpp.addLuminosity(1, NODO_LIGHT.getAvarage());
 
   /*=================== TOXIC ===================*/
+  Serial.println(F("========== TOXIC  =========="));
+  Serial.println("=> Cantidad de lecturas: "+String(NODO_TOXIC.getCounterSensor()));
+  Serial.println("=> Suma de las lecturas: "+String(NODO_TOXIC.getValues()));
+  Serial.print(F("+ Promedio de valor de deteccion de gases toxicos: "));
   NODO_TOXIC.CalculateAvarageValue();
+  Serial.println(NODO_TOXIC.getAvarage());
   NODO_TOXIC.resetCounterAvg();
   lpp.addGasToxic(1, NODO_TOXIC.getAvarage());
 
   /*=================== FLAMABLE ===================*/
-
+  Serial.println(F("========== FLAMABLE  =========="));
+  Serial.println("=> Cantidad de lecturas: "+String(NODO_FLAMMABLE.getCounterSensor()));
+  Serial.println("=> Suma de las lecturas: "+String(NODO_FLAMMABLE.getValues()));
+  Serial.print(F("+ Promedio de valor de deteccion de gases inflamables: "));
   NODO_FLAMMABLE.CalculateAvarageValue();
+  Serial.println(NODO_FLAMMABLE.getAvarage());
   NODO_FLAMMABLE.resetCounterAvg();
   lpp.addGasFlamable(1, NODO_FLAMMABLE.getAvarage()); 
-  /*=================== TEMPERATURE ===================*/
 
   // Serial.println();
   /*=================== ENVIO DE DATOS POR I2C ===================*/
@@ -358,8 +386,14 @@ void ReceptionEvent(){
   {
   case 'S':
       S = true;
+      Serial.println(F("Recibiendo mensaje del Maestro: "));
       //Es mejor hacer una rutina para SendPayload() para evitar desborde de memoria
-      AddAveragesLPP();
+      //AddAveragesLPP();
+      // lpp.addTemperature(1, 21.8);
+      // lpp.addRelativeHumidity(1,int(12.5)/2);
+      // lpp.addLuminosity(1, 99);
+      // lpp.addGasToxic(1, 250);
+      // lpp.addGasFlamable(1, 110);
     break;
   case 'R':
       Serial.println(F("Recibiendo mensaje del Maestro: "));
@@ -388,6 +422,7 @@ void ReceptionEvent(){
 
 void RequestingEvent() {
   if( S == true ){
+    Serial.println(F("manda bytes "));
     Wire.write(lpp.getSize()+2); //Aquí es que se envía la cantidad de Bytes
     // Serial.println("Se envia cantidad de bytes!");
     // Wire.write(message.length()); //Aquí es que se envía la cantidad de Bytes
@@ -395,6 +430,7 @@ void RequestingEvent() {
   }
   else{
     // Wire.println(message);
+    Serial.println(F("manda payload "));
     Wire.write(1);
     Wire.write(lpp.getBuffer(),lpp.getSize());
     Wire.write(9);
