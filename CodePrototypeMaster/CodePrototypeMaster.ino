@@ -1,13 +1,14 @@
 #include <Wire.h>
 #include "Arduino.h"
-#include "heltec.h"
+//#include "heltec.h"
 #include <TickTwo.h>
 #include <TTN_esp32.h>
 #include "LoRaConfig.h"
+
 #define I2C_Freq 100000
 #define SDA_0 21
 #define SCL_0 22
- 
+
 TwoWire I2C_0 = TwoWire(0);
 
 TTN_esp32 ttn ;
@@ -26,7 +27,7 @@ void message(const uint8_t* payload, size_t size, int rssi);
   /* ======================================================================*/
   /*      Initiates reading (I2C) and sending (loRa) readings every minute */
   /* ======================================================================*/
-TickTwo routineReceivePayload(receivePayload, 60000);
+TickTwo routineReceivePayload(receivePayload, 120000);
 
 uint8_t BYTE_CONTROL_BEGIN = 1;
 uint8_t BYTE_CONTROL_END = 9;
@@ -40,7 +41,7 @@ char payloadString[50] = {0};
 byte byteReceivedEnd, byteReceivedInit;
 
 void setup() {
-  Heltec.begin(true /*Display Enable*/, true /*LoRa Disable*/, true /*Serial Enable*/);
+  //Heltec.begin(true /*Display Enable*/, true /*LoRa Disable*/, true /*Serial Enable*/);
   ttn.begin();
   ttn.onMessage(message); // declare callback function when is downlink from server
   /* =========ABP Activation==========*/
@@ -60,17 +61,9 @@ void loop() {
   /*      Pasado la lectura (I2C) y envío (loRa) de 5 paquetes    */
   /*      Se ajusta para leer/enviar cada 5 minutos               */
   /* =============================================================*/
-  if(routineReceivePayload.counter() == 5){
-    routineReceivePayload.interval(60000*5);
-  }
-  /* ===========================================================================*/
-  /*      Pasado la lectura (I2C) y envío (loRa) de 4 paquetes cada 5 minutos   */
-  /*      En el contador se suman las 5 paquetes ya pasadas mas las 4 nuevas    */
-  /*      Se ajusta para leer/enviar cada 20 minutos                            */
-  /* ===========================================================================*/
-  if(routineReceivePayload.counter() == 9){
-    routineReceivePayload.interval(60000*20);
-  }
+  if(routineReceivePayload.counter() == 3)
+    routineReceivePayload.interval(3900000);
+
 }
 
 
@@ -118,11 +111,11 @@ void receivePayload(){
         Serial.printf("=> Payload sending to TTN: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],buffer[8]);
       }
       /* ======================= */ 
-      I2C_0.beginTransmission(23);
-      I2C_0.write('R');
-      I2C_0.write(dataLength);
-      I2C_0.write(data,dataLength);
-      I2C_0.endTransmission();
+      // I2C_0.beginTransmission(23);
+      // I2C_0.write('R');
+      // I2C_0.write(dataLength);
+      // I2C_0.write(data,dataLength);
+      // I2C_0.endTransmission();
       /* ======================= */ 
     }
     else{
@@ -144,11 +137,12 @@ void message(const uint8_t* payload, size_t size, int rssi){
   for (int i = 0; i < size; i++)
   {
     Serial.print(" " + String(payload[i])+" ");
-    // Serial.write(payload[i]);
+    //Serial.write(payload[i]);
   }
-  // I2C_0.beginTransmission(23);
-  // I2C_0.write('R');
-  // I2C_0.write(payload,size);
-  // I2C_0.endTransmission();
+  I2C_0.beginTransmission(23);
+  I2C_0.write('R');
+  I2C_0.write(size);
+  I2C_0.write(payload, size);
+  I2C_0.endTransmission();
   Serial.println();
 }
